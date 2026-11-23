@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Compilación de producción
+client/dist/
+
+# Base de datos SQLite y archivos subidos por usuarios
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Variables de entorno y secretos (NUNCA subir .env real)
+.env
+.env.local
+.env.*.local
+
+# Documentación privada de despliegue local
+docs/DEPLOY_VPS.md
+
+# Logs y archivos temporales
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editores / IDEs
+.vscode/
+.idea/

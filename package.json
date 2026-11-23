@@ -1,0 +1,16 @@
+{
+  "name": "calendario-amigos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Calendario de disponibilidad para amigos (DnD y Otros planes) con React, Node.js y SQLite",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently -n API,WEB -c cyan,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "test": "npm --prefix server test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
