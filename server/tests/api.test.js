@@ -215,7 +215,44 @@ test('Calendario API: auth, roles, invitaciones, aislamiento DnD/Otros planes, i
   });
   assert.equal(bothWritePlansOk.status, 200);
 
-  // 11. Admin grants plans role to Elena
+  // 10b. Mirroring restrictions: DnD-only user cannot mirror to plans before getting plans role
+  const dndMirrorDenied = await apiRequest(baseUrl, dndJar, 'PUT', '/api/availability/2026-11-30', {
+    calendar: 'dnd',
+    status: 'available',
+    mirror: true,
+  });
+  assert.equal(dndMirrorDenied.status, 403);
+
+  const dndBulkMirrorDenied = await apiRequest(baseUrl, dndJar, 'POST', '/api/availability/mirror', {
+    fromCalendar: 'dnd',
+    toCalendar: 'plans',
+    month: '2026-11',
+  });
+  assert.equal(dndBulkMirrorDenied.status, 403);
+
+  // 10c. User with both roles can mirror during selection and delete across both
+  const bothMirrorPut = await apiRequest(baseUrl, bothJar, 'PUT', '/api/availability/2026-11-30', {
+    calendar: 'dnd',
+    status: 'available',
+    note: 'Libre todo el día',
+    mirror: true,
+  });
+  assert.equal(bothMirrorPut.status, 200);
+  assert.equal(bothMirrorPut.data.mirrored, true);
+
+  const plansAfterMirror = await apiRequest(baseUrl, bothJar, 'GET', '/api/availability?month=2026-11&calendar=plans');
+  assert.ok(plansAfterMirror.data.entries.some((e) => e.date === '2026-11-30' && e.note === 'Libre todo el día'));
+
+  const bothMirrorDel = await apiRequest(
+    baseUrl,
+    bothJar,
+    'DELETE',
+    '/api/availability/2026-11-30?calendar=dnd&mirror=true'
+  );
+  assert.equal(bothMirrorDel.status, 200);
+  assert.equal(bothMirrorDel.data.mirrored, true);
+
+  // 11. Admin grants plans role to Elena, and Elena mirrors her existing DnD month to Plans
   const grantRes = await apiRequest(baseUrl, adminJar, 'PATCH', `/api/admin/users/${dndReg.data.user.id}/roles`, {
     can_dnd: true,
     can_plans: true,
@@ -223,8 +260,17 @@ test('Calendario API: auth, roles, invitaciones, aislamiento DnD/Otros planes, i
   assert.equal(grantRes.status, 200);
   assert.equal(grantRes.data.user.can_plans, true);
 
+  const elenaBulkMirror = await apiRequest(baseUrl, dndJar, 'POST', '/api/availability/mirror', {
+    fromCalendar: 'dnd',
+    toCalendar: 'plans',
+    month: '2026-11',
+  });
+  assert.equal(elenaBulkMirror.status, 200);
+  assert.equal(elenaBulkMirror.data.mirroredCount, 1);
+
   const elenaPlansNow = await apiRequest(baseUrl, dndJar, 'GET', '/api/availability?month=2026-11&calendar=plans');
   assert.equal(elenaPlansNow.status, 200);
+  assert.ok(elenaPlansNow.data.entries.some((e) => e.date === '2026-11-28' && e.note === 'Llevo dados'));
 
   // 12. Profile update: icon_bg_color validation & SVG sanitization
   const badColor = await apiRequest(baseUrl, dndJar, 'PATCH', '/api/profile', {

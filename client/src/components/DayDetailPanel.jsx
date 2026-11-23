@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, HelpCircle, Trash2, X } from 'lucide-react';
+import { Check, HelpCircle, Trash2, X, Repeat, CopyCheck } from 'lucide-react';
 import { formatFullDateEs } from '../utils/dates.js';
 import { UserAvatar } from './UserAvatar.jsx';
 
@@ -9,21 +9,28 @@ export function DayDetailPanel({
   usersById,
   currentUser,
   canEdit,
+  canMirror,
+  defaultMirror,
   activeCalendar,
   onSave,
   onDelete,
+  onMirrorSingleDay,
   onOpenLogin,
   onClose,
 }) {
   const myEntry = currentUser ? entries.find((e) => e.user_id === currentUser.id) : null;
   const [status, setStatus] = useState(myEntry?.status || 'available');
   const [note, setNote] = useState(myEntry?.note || '');
+  const [mirrorThisDay, setMirrorThisDay] = useState(Boolean(defaultMirror));
   const [saving, setSaving] = useState(false);
+
+  const otherCalendarLabel = activeCalendar === 'dnd' ? '✨ Otros planes' : '🎲 DnD';
 
   useEffect(() => {
     setStatus(myEntry?.status || 'available');
     setNote(myEntry?.note || '');
-  }, [date, myEntry?.status, myEntry?.note]);
+    setMirrorThisDay(Boolean(defaultMirror));
+  }, [date, myEntry?.status, myEntry?.note, defaultMirror]);
 
   const availableEntries = entries.filter((e) => e.status === 'available');
   const maybeEntries = entries.filter((e) => e.status === 'maybe');
@@ -32,7 +39,7 @@ export function DayDetailPanel({
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave(date, status, note);
+      await onSave(date, status, note, canMirror && mirrorThisDay);
       onClose();
     } finally {
       setSaving(false);
@@ -42,8 +49,18 @@ export function DayDetailPanel({
   async function handleRemove() {
     setSaving(true);
     try {
-      await onDelete(date);
+      await onDelete(date, canMirror && mirrorThisDay);
       onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleQuickMirrorExisting() {
+    if (!myEntry || !canMirror) return;
+    setSaving(true);
+    try {
+      await onMirrorSingleDay(date);
     } finally {
       setSaving(false);
     }
@@ -78,7 +95,22 @@ export function DayDetailPanel({
               marginBottom: 18,
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Tu disponibilidad</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Tu disponibilidad</div>
+              {canMirror && myEntry && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleQuickMirrorExisting}
+                  disabled={saving}
+                  style={{ padding: '4px 9px', fontSize: '0.76rem', borderRadius: 8 }}
+                  title={`Copiar este día tal como está hacia ${otherCalendarLabel}`}
+                >
+                  <CopyCheck size={13} />
+                  <span>Espejear hoy a {otherCalendarLabel}</span>
+                </button>
+              )}
+            </div>
 
             <div className="status-toggle-group">
               <button
@@ -124,8 +156,30 @@ export function DayDetailPanel({
               />
             </label>
 
+            {canMirror && (
+              <label className="mirror-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={mirrorThisDay}
+                  onChange={(e) => setMirrorThisDay(e.target.checked)}
+                />
+                <Repeat size={14} style={{ color: 'var(--accent-hover)', flexShrink: 0 }} />
+                <span>
+                  Aplicar también en <strong>{otherCalendarLabel}</strong> al guardar o quitar
+                </span>
+              </label>
+            )}
+
             <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'Guardando...' : myEntry ? 'Actualizar disponibilidad' : 'Guardar disponibilidad'}
+              {saving
+                ? 'Guardando...'
+                : myEntry
+                  ? canMirror && mirrorThisDay
+                    ? `Actualizar en ambos calendarios`
+                    : 'Actualizar disponibilidad'
+                  : canMirror && mirrorThisDay
+                    ? `Guardar en ambos calendarios`
+                    : 'Guardar disponibilidad'}
             </button>
           </form>
         ) : !currentUser ? (

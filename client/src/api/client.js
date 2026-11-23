@@ -50,10 +50,15 @@ export const api = {
     request(`/api/availability?month=${encodeURIComponent(month)}&calendar=${encodeURIComponent(calendar)}`),
   setAvailability: (date, payload) =>
     request(`/api/availability/${encodeURIComponent(date)}`, { method: 'PUT', body: payload }),
-  deleteAvailability: (date, calendar) =>
-    request(`/api/availability/${encodeURIComponent(date)}?calendar=${encodeURIComponent(calendar)}`, {
-      method: 'DELETE',
-    }),
+  deleteAvailability: (date, calendar, mirror = false) =>
+    request(
+      `/api/availability/${encodeURIComponent(date)}?calendar=${encodeURIComponent(calendar)}${mirror ? '&mirror=true' : ''}`,
+      {
+        method: 'DELETE',
+      }
+    ),
+  mirrorAvailability: (payload) =>
+    request('/api/availability/mirror', { method: 'POST', body: payload }),
 
   getInvites: () => request('/api/admin/invites'),
   createInvite: (payload) => request('/api/admin/invites', { method: 'POST', body: payload }),

@@ -33,6 +33,7 @@ export default function App() {
 
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [quickPaint, setQuickPaint] = useState(false);
+  const [mirrorMode, setMirrorMode] = useState(false);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [verifiedInviteCode, setVerifiedInviteCode] = useState('');
@@ -136,6 +137,17 @@ export default function App() {
     return activeCalendar === 'dnd' ? user.can_dnd : user.can_plans;
   }, [user, activeCalendar]);
 
+  const canMirrorCalendars = useMemo(() => {
+    if (!user) return false;
+    if (user.is_admin) return true;
+    return Boolean(user.can_dnd && user.can_plans);
+  }, [user]);
+
+  const myMonthEntriesCount = useMemo(() => {
+    if (!user) return 0;
+    return entries.filter((e) => e.user_id === user.id).length;
+  }, [entries, user]);
+
   const usersById = useMemo(
     () => Object.fromEntries(users.map((u) => [u.id, u])),
     [users]
@@ -185,27 +197,76 @@ export default function App() {
     await api.logout();
     setUser(null);
     setQuickPaint(false);
+    setMirrorMode(false);
     setActiveCalendar('dnd');
     showToast('Sesión cerrada');
   }
 
-  async function handleSaveAvailability(date, status, note) {
+  async function handleSaveAvailability(date, status, note, mirror = mirrorMode) {
+    const shouldMirror = Boolean(canMirrorCalendars && mirror);
     const res = await api.setAvailability(date, {
       calendar: activeCalendar,
       status,
       note,
+      mirror: shouldMirror,
     });
     setEntries((prev) => {
       const without = prev.filter((e) => !(e.user_id === user.id && e.date === date));
       return [...without, res.entry];
     });
-    showToast(status === 'available' ? 'Marcado como Disponible' : 'Marcado como Quizás');
+    const statusText = status === 'available' ? 'Disponible' : 'Quizás';
+    showToast(
+      shouldMirror
+        ? `Marcado como ${statusText} (en ambos calendarios)`
+        : `Marcado como ${statusText}`
+    );
   }
 
-  async function handleDeleteAvailability(date) {
-    await api.deleteAvailability(date, activeCalendar);
+  async function handleDeleteAvailability(date, mirror = mirrorMode) {
+    const shouldMirror = Boolean(canMirrorCalendars && mirror);
+    await api.deleteAvailability(date, activeCalendar, shouldMirror);
     setEntries((prev) => prev.filter((e) => !(e.user_id === user.id && e.date === date)));
-    showToast('Disponibilidad eliminada');
+    showToast(
+      shouldMirror ? 'Disponibilidad eliminada de ambos calendarios' : 'Disponibilidad eliminada'
+    );
+  }
+
+  async function handleMirrorSingleDay(date) {
+    if (!canMirrorCalendars) return;
+    const targetCal = activeCalendar === 'dnd' ? 'plans' : 'dnd';
+    const targetLabel = targetCal === 'dnd' ? '🎲 DnD' : '✨ Otros planes';
+    try {
+      await api.mirrorAvailability({
+        fromCalendar: activeCalendar,
+        toCalendar: targetCal,
+        dates: [date],
+        overwrite: true,
+      });
+      showToast(`Día espejeado a ${targetLabel}`);
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  async function handleMirrorMonth(overwrite = false) {
+    if (!canMirrorCalendars) return;
+    const targetCal = activeCalendar === 'dnd' ? 'plans' : 'dnd';
+    const targetLabel = targetCal === 'dnd' ? '🎲 DnD' : '✨ Otros planes';
+    try {
+      const res = await api.mirrorAvailability({
+        fromCalendar: activeCalendar,
+        toCalendar: targetCal,
+        month,
+        overwrite,
+      });
+      showToast(
+        overwrite
+          ? `Mes sincronizado en ${targetLabel} (${res.mirroredCount} días)`
+          : `${res.mirroredCount} ${res.mirroredCount === 1 ? 'día espejeado' : 'días espejeados'} a ${targetLabel}`
+      );
+    } catch (err) {
+      showToast(err.message);
+    }
   }
 
   async function handleDayClick(date) {
@@ -213,11 +274,11 @@ export default function App() {
       const current = entries.find((e) => e.user_id === user.id && e.date === date);
       try {
         if (!current) {
-          await handleSaveAvailability(date, 'available', '');
+          await handleSaveAvailability(date, 'available', '', mirrorMode);
         } else if (current.status === 'available') {
-          await handleSaveAvailability(date, 'maybe', current.note || '');
+          await handleSaveAvailability(date, 'maybe', current.note || '', mirrorMode);
         } else {
-          await handleDeleteAvailability(date);
+          await handleDeleteAvailability(date, mirrorMode);
         }
       } catch (err) {
         showToast(err.message);
@@ -279,6 +340,12 @@ export default function App() {
         canEdit={canEditActiveCalendar}
         quickPaint={quickPaint}
         onToggleQuickPaint={() => setQuickPaint((q) => !q)}
+        canMirror={canMirrorCalendars}
+        mirrorMode={mirrorMode}
+        onToggleMirrorMode={() => setMirrorMode((m) => !m)}
+        activeCalendar={activeCalendar}
+        myMonthEntriesCount={myMonthEntriesCount}
+        onMirrorMonth={handleMirrorMonth}
         onCopyMonthLink={handleCopyMonthLink}
       />
 
@@ -314,9 +381,12 @@ export default function App() {
           usersById={usersById}
           currentUser={user}
           canEdit={canEditActiveCalendar}
+          canMirror={canMirrorCalendars}
+          defaultMirror={mirrorMode}
           activeCalendar={activeCalendar}
           onSave={handleSaveAvailability}
           onDelete={handleDeleteAvailability}
+          onMirrorSingleDay={handleMirrorSingleDay}
           onOpenLogin={() => setDropdownOpen(true)}
           onClose={() => setSelectedDate(null)}
         />
