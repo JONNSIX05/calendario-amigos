@@ -6,8 +6,8 @@ client/node_modules/
 # Compilación de producción
 client/dist/
 
-# Base de datos SQLite y archivos subidos por usuarios
-data/
+# Base de datos SQLite y archivos subidos por usuarios (solo carpeta raíz)
+/data/
 *.db
 *.db-shm
 *.db-wal
