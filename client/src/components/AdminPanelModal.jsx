@@ -222,7 +222,7 @@ export function AdminPanelModal({ onClose, onShowToast, onRolesChanged }) {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div className="invite-row-actions">
                         <button
                           type="button"
                           className="icon-btn"
@@ -265,7 +265,7 @@ export function AdminPanelModal({ onClose, onShowToast, onRolesChanged }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="invite-row-actions">
                   <button
                     type="button"
                     className={`icon-btn ${u.can_dnd ? 'active-pill' : ''}`}

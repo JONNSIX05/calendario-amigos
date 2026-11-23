@@ -5,7 +5,7 @@ import { DEFAULT_BG_COLORS, PRESET_ICON_IDS, serializeUser } from '../db.js';
 const USERNAME_RE = /^[a-zA-Z0-9._-]{2,24}$/;
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
-export function createAuthRouter({ db, auth, adminSetupCode }) {
+export function createAuthRouter({ db, auth, adminSetupCode, authRateLimiter = (_req, _res, next) => next() }) {
   const router = Router();
 
   function getUserCount() {
@@ -21,7 +21,7 @@ export function createAuthRouter({ db, auth, adminSetupCode }) {
     res.json({ user: req.user || null });
   });
 
-  router.get('/invite/:code', (req, res) => {
+  router.get('/invite/:code', authRateLimiter, (req, res) => {
     const code = String(req.params.code || '').trim();
     if (!code) {
       return res.status(400).json({ valid: false, error: 'Código de invitación vacío.' });
@@ -49,7 +49,7 @@ export function createAuthRouter({ db, auth, adminSetupCode }) {
     return res.json({ valid: true });
   });
 
-  router.post('/register', async (req, res) => {
+  router.post('/register', authRateLimiter, async (req, res) => {
     const username = String(req.body?.username || '').trim();
     const displayName = String(req.body?.displayName || '').trim() || username;
     const password = String(req.body?.password || '');
@@ -139,7 +139,7 @@ export function createAuthRouter({ db, auth, adminSetupCode }) {
     }
   });
 
-  router.post('/login', async (req, res) => {
+  router.post('/login', authRateLimiter, async (req, res) => {
     const username = String(req.body?.username || '').trim();
     const password = String(req.body?.password || '');
 

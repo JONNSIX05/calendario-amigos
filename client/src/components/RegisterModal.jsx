@@ -95,9 +95,9 @@ export function RegisterModal({ inviteCode, onClose, onRegistered }) {
         </div>
 
         <form className="form-stack" onSubmit={handleSubmit} style={{ gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div className="register-identity-row">
             <UserAvatar user={previewUser} size="lg" status="available" />
-            <div style={{ flex: 1, minWidth: 200, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="register-fields-grid">
               <label className="field-label">
                 Usuario
                 <input
@@ -215,7 +215,7 @@ export function RegisterModal({ inviteCode, onClose, onRegistered }) {
 
           {error && <div className="alert-box error">{error}</div>}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <div className="modal-footer-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancelar
             </button>

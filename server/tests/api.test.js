@@ -264,4 +264,69 @@ test('Calendario API: auth, roles, invitaciones, aislamiento DnD/Otros planes, i
   badForm.append('icon', new Blob(['hello'], { type: 'text/plain' }), 'evil.txt');
   const badUpload = await apiRequest(baseUrl, dndJar, 'POST', '/api/profile/icon', badForm);
   assert.equal(badUpload.status, 400);
+
+  // 13. Healthcheck & security headers
+  const healthRes = await apiRequest(baseUrl, null, 'GET', '/api/health');
+  assert.equal(healthRes.status, 200);
+  assert.equal(healthRes.data.status, 'ok');
+  assert.equal(healthRes.headers.get('x-frame-options'), 'DENY');
+  assert.equal(healthRes.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(healthRes.headers.get('x-powered-by'), null);
+  assert.ok(healthRes.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
+
+  // 14. CSRF protection blocks cross-site mutations
+  const csrfCrossSite = await fetch(`${baseUrl}/api/auth/logout`, {
+    method: 'POST',
+    headers: { 'sec-fetch-site': 'cross-site' },
+  });
+  assert.equal(csrfCrossSite.status, 403);
+
+  const csrfBadOrigin = await fetch(`${baseUrl}/api/auth/logout`, {
+    method: 'POST',
+    headers: { origin: 'https://evil-attacker.com' },
+  });
+  assert.equal(csrfBadOrigin.status, 403);
+});
+
+test('Calendario API: rate limiting en endpoints de autenticación', async (t) => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cal-rl-test-'));
+  const dbPath = path.join(tmpDir, 'test.db');
+  const uploadDir = path.join(tmpDir, 'uploads');
+
+  const { app, db } = createApp({
+    dbPath,
+    uploadDir,
+    jwtSecret: 'test-secret-key',
+    adminSetupCode: 'SETUP99',
+    cookieSecure: true,
+    authRateLimit: { windowMs: 60_000, max: 3 },
+  });
+
+  const server = await new Promise((resolve) => {
+    const s = app.listen(0, '127.0.0.1', () => resolve(s));
+  });
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  t.after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    db.close();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  for (let i = 0; i < 3; i++) {
+    const res = await apiRequest(baseUrl, null, 'POST', '/api/auth/login', {
+      username: 'nobody',
+      password: 'wrong',
+    });
+    assert.equal(res.status, 401);
+    assert.ok(res.headers.get('strict-transport-security')?.includes('max-age='));
+  }
+
+  const blockedRes = await apiRequest(baseUrl, null, 'POST', '/api/auth/login', {
+    username: 'nobody',
+    password: 'wrong',
+  });
+  assert.equal(blockedRes.status, 429);
+  assert.ok(blockedRes.headers.get('retry-after'));
 });

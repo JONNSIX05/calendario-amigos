@@ -57,6 +57,7 @@ body {
   background: var(--bg-page);
   color: var(--text-primary);
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -598,6 +599,7 @@ button {
 }
 
 .day-cell {
+  min-width: 0;
   min-height: 102px;
   border-radius: 13px;
   border: 1px solid var(--border-subtle);
@@ -772,7 +774,7 @@ button {
 
 .best-days-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 285px), 1fr));
   gap: 12px;
 }
 
@@ -803,6 +805,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .best-day-date {
@@ -990,6 +993,34 @@ button {
   border: 1px solid var(--border-subtle);
 }
 
+.invite-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.register-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.register-fields-grid {
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .toast {
   position: fixed;
   bottom: 20px;
@@ -1005,38 +1036,305 @@ button {
   z-index: 100;
 }
 
-/* Mobile Responsive */
-@media (max-width: 720px) {
+/* Tablet & Mobile Responsive */
+@media (max-width: 900px) {
   .app-shell {
-    padding: 10px 10px 48px;
+    padding: 14px 12px 56px;
+    gap: 14px;
+  }
+
+  .top-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-left {
+    grid-column: 1 / 2;
+    grid-row: 1;
+  }
+
+  .header-right {
+    grid-column: 2 / 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .header-center {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .month-label {
+    flex: 1;
+  }
+
+  .day-cell {
+    min-height: 86px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 10px 8px 48px;
+    gap: 12px;
   }
 
   .top-header {
     padding: 10px 12px;
+    border-radius: 14px;
+    gap: 10px;
   }
 
-  .days-grid,
-  .weekdays-row {
-    gap: 4px;
+  .header-left {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .header-left .brand-title {
+    padding-right: 128px;
+    min-height: 36px;
+  }
+
+  .header-right {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+  }
+
+  .calendar-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .cal-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+  }
+
+  .header-center {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .month-label {
+    min-width: 0;
+    font-size: 0.92rem;
+  }
+
+  .dropdown-panel {
+    position: fixed;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 76px);
+    overflow-y: auto;
+  }
+
+  /* Toolbar / Friends bar */
+  .toolbar-card {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .toolbar-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .friends-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .friends-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .friend-chip {
+    flex-shrink: 0;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .toolbar-actions .icon-btn {
+    flex: 1;
+    height: 38px;
+  }
+
+  /* Calendar grid */
+  .calendar-card {
+    padding: 10px 8px;
+    border-radius: 14px;
+  }
+
+  .weekdays-row,
+  .days-grid {
+    gap: 3px;
+  }
+
+  .weekday-cell {
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    padding: 2px 0;
   }
 
   .day-cell {
-    min-height: 74px;
-    padding: 5px;
-    border-radius: 10px;
+    min-height: 66px;
+    padding: 4px;
+    border-radius: 9px;
+    gap: 4px;
+    overflow: hidden;
   }
 
-  .user-avatar.sm {
-    width: 22px;
-    height: 22px;
+  .day-num {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .all-star-pill {
+    font-size: 0.54rem;
+    padding: 1px 4px;
+    white-space: nowrap;
+  }
+
+  .day-avatars {
+    gap: 3px;
+  }
+
+  .day-avatars .user-avatar.sm {
+    width: 18px;
+    height: 18px;
+  }
+
+  .day-avatars .avatar-mini-badge {
+    width: 10px;
+    height: 10px;
+    font-size: 0.5rem;
+    bottom: -2px;
+    right: -2px;
+  }
+
+  .day-avatars .avatar-mini-badge.note {
+    width: 8px;
+    height: 8px;
+    top: -2px;
+  }
+
+  .more-pill {
+    font-size: 0.62rem;
+    padding: 1px 4px;
   }
 
   .avatar-tooltip {
     display: none;
   }
 
+  .calendar-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.74rem;
+  }
+
+  /* Best days */
+  .best-days-section {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .best-days-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* Modals as mobile bottom sheet */
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-card,
+  .modal-card.wide {
+    max-width: 100%;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    padding: 16px 14px 22px;
+  }
+
+  /* Prevent iOS Safari zoom on input focus */
+  .text-input {
+    font-size: 16px;
+  }
+
+  .register-identity-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .register-fields-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .invite-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invite-row-actions {
+    width: 100%;
+    display: flex;
+  }
+
+  .invite-row-actions .icon-btn {
+    flex: 1;
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 400px) {
   .all-star-pill {
-    font-size: 0.58rem;
-    padding: 1px 4px;
+    display: none;
+  }
+
+  .status-toggle-group {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .status-toggle-group .btn-danger {
+    grid-column: 1 / -1;
   }
 }

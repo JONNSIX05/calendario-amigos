@@ -180,7 +180,7 @@ export function IconPickerModal({ user, onClose, onUserUpdated }) {
 
           {error && <div className="alert-box error">{error}</div>}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <div className="modal-footer-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancelar
             </button>

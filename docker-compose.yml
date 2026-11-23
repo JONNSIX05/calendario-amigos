@@ -1,0 +1,38 @@
+services:
+  calendario:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: calendario_amigos
+    restart: unless-stopped
+    # IMPORTANTE: Expuesto solo en loopback (127.0.0.1) para que nadie pueda
+    # saltarse Nginx ni el firewall UFW del VPS accediendo directo al puerto 3001.
+    ports:
+      - "127.0.0.1:3001:3001"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DB_PATH: /app/data/calendar.db
+      UPLOAD_DIR: /app/data/uploads/icons
+    volumes:
+      - ./data:/app/data
+    # Endurecimiento de seguridad del contenedor (corre como el usuario no-root del host 1001:1001)
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 100
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
